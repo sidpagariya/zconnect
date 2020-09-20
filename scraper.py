@@ -30,7 +30,7 @@ while(True):
                 "id": last_index,
                 "from": sender,
                 "to": receiver,
-                "text": text,
+                "message": text,
                 "is_private": is_private,
             }
             data_json = json.dumps(data)
@@ -39,7 +39,7 @@ while(True):
             response = {"text": "test"} # requests.post(url="https://gcp.sidp.me/data", json=data_json)
             if response != "":
                 response_data = json.loads(response)
-                message = response_data["text"]
+                message = response_data["message"]
                 chatbox = driver.find_element_by_class_name("chat-box__chat-textarea")
                 chatbox.send_keys(message)
                 chatbox.send_keys(Keys.ENTER)
