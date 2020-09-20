@@ -1,53 +1,68 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Sat Sep 19 14:48:30 2020
-
-@author: sanje
-"""
-
 '''/anon [TEXT] - anonymous
-/startpoll [QUESTION] [OPTION1] [OPTION2] […] 
-/endpoll
-/starteng [N] - samples N students for engagement 
+/startpoll [QUESTION] [OPTION1] [OPTION2] […]
+/starteng
 /endeng
-/showpoll - TEMP command
 /showeng - TEMP command'''
 
 import numpy as np
 import matplotlib.pyplot as plt
+from app.piazza import piazza_search
 
-def parser(path):
-    '''parses Zoom chat txt file'''
-    messages = []
-    f = open(path, "r")
-    responses = []
+CLASS_ID = 'kd8aencspmt2tb'
+
+
+def parse_eng(messages):
     final = []
-    for x in f:
-        messages.append((x.split(":")[-1]).split("\\")[0])
-    
+    responses = []
     for i in range(len(messages)):
         if ("starteng" in messages[i]):
-            i+=2
+            i+=1
             while(i < len(messages) and "stopeng" not in messages[i]):
-                rating = messages[i][1]
+                rating = messages[i][0]
                 if rating.isnumeric() and int(rating) >= 1 and int(rating) <= 5:
-                    responses.append(int(messages[i][1]))
+                    responses.append(int(messages[i][0]))
                 i+=1
             final.append(responses)
             responses = []
     return final
 
-
-def handle_command(message):
-    message_arr = message.split(" ") # /anon asdjhakjsdh asdhklajsdh 
+def handle_command(message, global_history, temp_history):
+    message_arr = message.split(" ", 2)
     command = message_arr[0]
     if command == "/anon":
-        return anon(message.split("/anon")[1])
+        return anon(message.split("/anon")[1]), False
     elif command == "/starteng":
-        return starteng()
+        return starteng(), True
+    elif command == "/stopeng":
+        return stopeng(), False
+    elif command == "/showeng":
+        hists = parse_eng(temp_history)
+        if len(hists) > 0:
+            return showeng(hists[0]), False
+    elif command == "/showeng_final":
+        return showeng_final(parse_eng(global_history)), False
+    elif command == "/startpoll":
+        if message_arr[1].isnumeric():
+            return startpoll(message_arr[1]), False
+    elif command == "/endpoll":
+        return endpoll(), False
+    elif command == "/question":
+        if len(message_arr) == 2:
+            query = message_arr[1]
+            return piazza_search(CLASS_ID, query), False
+        n, query = message_arr[1], message_arr[2]
+        if n.isnumeric():
+            return piazza_search(CLASS_ID, query, int(n)), False
+        else:
+            query = message.split(" ", 1)[1]
+            return piazza_search(CLASS_ID, query), False
+        return "", False
+    return "", False
 
 def anon(message):
-    return "Someone asked:" + message
+    if message or len(message) > 0:
+        return "Someone asked:" + message
+    return ""
 
 def startpoll(text):
     #question, options = parse.parser(text)
@@ -59,33 +74,36 @@ def endpoll():
 def starteng():
     return "Checkpoint: Hey there! How well would you say you understood the content on the last slide (1 = not at all , 5 = crystal clear)?"
 
+def stopeng():
+    return ""
+
 def showpoll(hist, question, options):
     '''options are all of the diff'''
-    return
+    return ""
 
-def showeng(hist, slide):
+def showeng(hist):
     '''shows histogram of student understanding for a given slide '''
     '''assume data is in form of histogram with bins 1, 2, 3, 4, 5'''
     plt.figure()
     plt.hist(hist, facecolor='blue', alpha=0.5)
     plt.xticks([1, 2, 3, 4, 5])
     plt.show()
-    plt.title('Distribution of Student Understanding: Slide ' + str(slide) + ' (sample size of ' + str(len(hist)) + ' students)')
+    plt.title('Distribution of Student Understanding: Most recent slide (sample size of ' + str(len(hist)) + ' students)')
     plt.xlabel('Level of Understanding')
     plt.ylabel('Count')
-    plt.savefig("C:\\Users\\sanje\\OneDrive\\Desktop\\understanding_slide" + str(slide) + ".png");
-    return
+    plt.show()
+    plt.savefig('recent.png')
+    return ""
 
 def showeng_final(array_hists):
     '''shows histogram of average student understanding across all slides'''
-    avgs = [];
+    avgs = []
     for array in array_hists:
-        avgs.append(np.mean(array));
+        avgs.append(np.mean(array)) 
     
-    
-    slides = np.linspace(1, len(array_hists), num= len(array_hists));
+    slides = np.linspace(1, len(array_hists), num=len(array_hists))
     print(np.shape(slides))
-    print(np.shape(avgs));
+    print(np.shape(avgs))
     plt.figure()
     plt.bar(slides,avgs)
     plt.xticks(slides)
@@ -94,23 +112,14 @@ def showeng_final(array_hists):
     plt.ylabel('Average Student Understanding')
     plt.show()
     
-    plt.boxplot(array_hists);
+    plt.boxplot(array_hists)
     plt.show()
-    plt.title('Student Understanding per Slide')
+    plt.title('Student Understanding all Slides')
     plt.xlabel('Slide')
     plt.ylabel('Student Understanding')
-    plt.savefig("C:\\Users\\sanje\\OneDrive\\Desktop\\understanding_allslides.png");
+    plt.savefig('understanding_allslides.png')
 
-    return
-        
-    
-
-if __name__ == "__main__":
-    
-    path = "C:\\Users\\sanje\\OneDrive\\Documents\\Zoom\\2020-09-19 16.37.51 EECS4LYFE Meeting Room - HackMIT 93275589158\\meeting_saved_chat.txt";
-    array_hist = parser(path);
-    showeng(array_hist[2], 2)
-    showeng_final(array_hist)
+    return ""
         
     
 
