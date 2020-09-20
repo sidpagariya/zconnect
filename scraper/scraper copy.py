@@ -8,7 +8,6 @@ driver.get(URL)
 name = driver.find_element_by_id("inputname")
 name.send_keys("ZConnect")
 name.send_keys(Keys.ENTER)
-waiting_for_login = input()
 
 # ASSUME that same person doesn't send more than 
 last_index = 0
@@ -17,7 +16,12 @@ while(True):
     print("heartbeat")
     try:
         chats = driver.find_elements_by_class_name("chat-item__chat-info")
+        print(len(chats))
+        print(last_index)
+        test = driver.find_elements_by_xpath("//div[@class = 'chat-item__chat-info']")
+        print(len(test))
         while (len(chats) > last_index):
+            print("inner")
             chat = chats[last_index]
             usernames = chat.find_elements_by_tag_name("span")
             sender = usernames[0].text
